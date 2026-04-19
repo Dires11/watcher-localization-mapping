@@ -1,0 +1,96 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# rtabmap_params.yaml  —  RTAB-Map SLAM configuration
+#
+# RTAB-Map consumes the front camera (cam0) RGB-D stream, the fused /odom
+# from the EKF, and the merged /scan.  It produces:
+#   /map               nav_msgs/OccupancyGrid  →  Nav2
+#   map → odom TF      (RTAB-Map is the sole publisher of this transform)
+#   /rtabmap/mapData   full 3-D map database
+#
+# Key design choices:
+#   - Grid/FromDepth: true   — 2D grid built from depth projection, not just scan
+#   - subscribe_scan: true   — scan used for ICP refinement of grid edges
+#   - Kp/DetectorStrategy: 6 — GFTT/BRIEF, fast on Jetson without losing accuracy
+#   - Mem/DBPath set          — map persists across container restarts
+# ──────────────────────────────────────────────────────────────────────────────
+
+rtabmap:
+  ros__parameters:
+
+    # ── Frame IDs ────────────────────────────────────────────────────────────
+    # ZED Mini publishes odom→cam0_camera_link; use that as the robot frame.
+    # Once Nav2 integration is needed, add a static TF cam0_camera_link→base_link
+    # and change frame_id back to base_link.
+    frame_id:       cam0_camera_link
+    odom_frame_id:  odom
+    map_frame_id:   map
+
+    # ── Input subscriptions ───────────────────────────────────────────────────
+    subscribe_depth: true
+    subscribe_rgb:   true
+    subscribe_scan:  false     # disable scan sync for now — simplifies startup
+    subscribe_odom_info: false
+
+    # ── QoS — must match ZED wrapper (BEST_EFFORT = 2) ───────────────────────
+    qos_image:       2
+    qos_camera_info: 2
+    qos_odom:        2
+
+    # Topic remappings are declared in rtabmap.launch.py.
+    # Listed here for reference:
+    #   rgb/image         → /cam0/rgb/image_rect_color
+    #   rgb/camera_info   → /cam0/rgb/camera_info
+    #   depth/image       → /cam0/depth/depth_registered
+    #   odom              → /odom
+    #   scan              → /scan
+
+    # ── SLAM / Localisation mode ──────────────────────────────────────────────
+    Mem/IncrementalMemory: "true"      # true = full SLAM; false = localisation only
+    Mem/InitWMWithAllNodes: "false"
+
+    # ── Database ──────────────────────────────────────────────────────────────
+    # The database persists the map so the wheelchair remembers areas across
+    # sessions.  Delete rtabmap.db to start a fresh map.
+    Mem/DBPath: "/root/ros2_ws/maps/rtabmap.db"
+
+    # ── 2-D occupancy grid output ─────────────────────────────────────────────
+    Grid/CellSize: "0.05"              # 5 cm resolution — suitable for wheelchair nav
+    Grid/RangeMax: "10.0"             # metres
+    Grid/FromDepth: "true"            # Build grid from depth sensor, not just laser
+    Grid/3D: "false"                  # Project to 2D (required for nav_msgs/OccupancyGrid)
+    Grid/MaxGroundAngle: "45"         # degrees — surfaces steeper than this = obstacle
+    Grid/NormalsSegmentation: "true"  # Classify floor vs. obstacle by surface normal
+    Grid/RayTracing: "true"           # Mark free space along rays for cleaner maps
+
+    map_always_update: false
+    map_empty_ray_tracing: true
+
+    # ── Occupancy grid ────────────────────────────────────────────────────────
+    # Build grid from depth projection (not scan — scan is disabled).
+    Grid/Sensor: "1"
+
+    # ── Loop closure / visual feature detection ───────────────────────────────
+    # ORB (strategy 2) — BRIEF is unavailable without OpenCV xfeatures2d.
+    Kp/MaxFeatures: "500"
+    Kp/DetectorStrategy: "2"          # 0=SURF, 1=SIFT, 2=ORB, 6=GFTT/BRIEF
+    Vis/FeatureType: "2"              # Must match Kp/DetectorStrategy — both ORB to avoid Mem/UseOdomFeatures warning
+    Vis/MinInliers: "15"              # Minimum inliers for a valid loop closure
+    Vis/InlierDistance: "0.1"         # metres
+
+    # ── Memory management ─────────────────────────────────────────────────────
+    Mem/STMSize: "30"                 # Short-term memory nodes (reduce to 15 if RAM-limited on Jetson)
+    Mem/RehearsalSimilarity: "0.6"    # Consolidate similar nodes to save memory
+
+    # ── Keyframe policy ───────────────────────────────────────────────────────
+    RGBD/LinearUpdate: "0.1"          # metres moved before new keyframe
+    RGBD/AngularUpdate: "0.05"        # radians turned before new keyframe
+    RGBD/OptimizeMaxError: "3.0"      # Reject loop closures with larger graph error
+    RGBD/ProximityBySpace: "true"     # Local loop closure search — essential indoors
+
+    # ── ICP scan matching ─────────────────────────────────────────────────────
+    Icp/MaxTranslation: "0.3"
+    Icp/MaxRotation: "0.785"          # ~45 degrees
+
+    # ── Processing rate ───────────────────────────────────────────────────────
+    Rtabmap/TimeThr: "0"              # No time limit per frame
+    Rtabmap/DetectionRate: "1"        # Process every frame (reduce to 0.5 on Jetson if slow)

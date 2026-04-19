@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>wheelchair_slam</name>
+  <version>0.1.0</version>
+  <description>
+    Localization and mapping pipeline for the autonomous wheelchair.
+    Fuses visual-inertial odometry from multiple ZED Mini cameras,
+    generates a virtual laser scan from merged depth point clouds,
+    and runs RTAB-Map SLAM to produce a 2D occupancy grid for Nav2.
+  </description>
+  <maintainer email="vision@wheelchair.local">Vision Team</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+
+  <depend>zed_wrapper</depend>
+  <depend>zed_interfaces</depend>
+  <depend>rtabmap_ros</depend>
+  <depend>robot_localization</depend>
+  <depend>pointcloud_to_laserscan</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>joint_state_publisher</depend>
+  <depend>xacro</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_sensor_msgs</depend>
+  <depend>nav2_map_server</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>rclpy</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

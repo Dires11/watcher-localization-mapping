@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="wheelchair_cameras">
+
+  <!--
+    ZED Mini camera mount macro.
+
+    Parameters:
+      name   - Unique camera name (e.g. zed_cam0). Used as prefix for all frames.
+      x      - Offset from base_link in metres (forward is +x)
+      y      - Offset from base_link in metres (left is +y)
+      z      - Offset from base_link in metres (up is +z)
+      roll   - Rotation around x axis in radians
+      pitch  - Rotation around y axis in radians
+      yaw    - Rotation around z axis in radians (0 = forward, π/2 = left)
+
+    When camera placement is finalised, update camera_params.yaml — no URDF
+    changes are required.
+
+    ZED Mini physical dimensions: 175 mm × 30 mm × 33 mm
+  -->
+  <xacro:macro name="zed_mini_mount" params="name x y z roll pitch yaw">
+
+    <!-- Fixed joint from base_link to the camera body centre -->
+    <joint name="${name}_joint" type="fixed">
+      <parent link="base_link"/>
+      <child  link="${name}_link"/>
+      <origin xyz="${x} ${y} ${z}" rpy="${roll} ${pitch} ${yaw}"/>
+    </joint>
+
+    <link name="${name}_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <!-- Approximate ZED Mini body as a box -->
+          <box size="0.175 0.033 0.030"/>
+        </geometry>
+        <material name="zed_grey">
+          <color rgba="0.3 0.3 0.3 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.175 0.033 0.030"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.063"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0"
+                              iyy="0.0001" iyz="0"
+                                            izz="0.0001"/>
+      </inertial>
+    </link>
+
+    <!--
+      The ZED ROS2 wrapper publishes its camera frames relative to the
+      camera_link it creates internally (named <camera_name>_camera_link).
+      We do NOT redefine those frames here — the wrapper owns them.
+      This macro only places the rigid mount joint so that Nav2 and
+      RTAB-Map can look up transforms from base_link to the camera body.
+    -->
+
+  </xacro:macro>
+
+</robot>

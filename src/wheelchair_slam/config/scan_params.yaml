@@ -1,0 +1,33 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# scan_params.yaml  —  pointcloud_to_laserscan configuration
+#
+# Slices the merged 3-camera point cloud into a 2D laser scan at obstacle
+# height.  The height band (min_height / max_height) captures objects the
+# wheelchair could collide with while ignoring the floor and ceiling.
+#
+# With all 3 cameras contributing to /merged_cloud (transformed to base_link),
+# the scan covers close to 360° with gaps only at the camera blind spots.
+# ──────────────────────────────────────────────────────────────────────────────
+
+pointcloud_to_laserscan_node:
+  ros__parameters:
+    target_frame: base_link     # Output scan in base_link frame
+    transform_tolerance: 0.05   # seconds — increase to 0.1 if ExtrapolationException
+
+    # Height band for obstacle detection (metres, relative to base_link)
+    # base_link is at floor level; a seated occupant starts at ~0.45 m.
+    # We want to detect obstacles at wheelchair-collision height.
+    min_height: 0.10            # Ignore floor returns below 10 cm
+    max_height: 0.80            # Ignore objects above 80 cm (e.g. table tops)
+
+    # Scan angular range — full 360° because cameras cover multiple directions
+    angle_min: -3.14159265      # -π
+    angle_max:  3.14159265      #  π
+    angle_increment: 0.00872665 # 0.5° resolution
+
+    scan_time: 0.1              # seconds (10 Hz, matches point_cloud_freq)
+    range_min: 0.30             # metres — minimum reliable depth from ZED Mini
+    range_max: 10.0             # metres
+
+    use_inf: true               # Represent no-return as infinity (not drop)
+    inf_epsilon: 1.0

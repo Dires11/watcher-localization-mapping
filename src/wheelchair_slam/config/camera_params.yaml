@@ -1,0 +1,78 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# camera_params.yaml
+#
+# Per-camera configuration for each ZED Mini.
+# Update serial_number with the actual values printed on each camera.
+# Update x/y/z/roll/pitch/yaw when the hardware team finalises mounting positions.
+#
+# Coordinate convention (ROS REP-103):
+#   +x = forward   +y = left   +z = up
+#   Angles in radians.  yaw: 0=forward, π/2=left, π=rear, -π/2=right
+# ──────────────────────────────────────────────────────────────────────────────
+
+cameras:
+  cam0:
+    serial_number: "0"          # TODO: replace with actual serial number
+    camera_name: "zed_cam0"
+    # Mount position relative to base_link (placeholder — update after hardware finalised)
+    x_offset:  0.30             # Forward
+    y_offset:  0.00             # Centred
+    z_offset:  0.60             # Height
+    roll:  0.0
+    pitch: 0.0
+    yaw:   0.0                  # Facing forward
+
+  cam1:
+    serial_number: "0"          # TODO: replace with actual serial number
+    camera_name: "zed_cam1"
+    x_offset: -0.10
+    y_offset:  0.25             # Left side
+    z_offset:  0.55
+    roll:  0.0
+    pitch: 0.0
+    yaw:   1.5708               # Facing left (90°)
+
+  cam2:
+    serial_number: "0"          # TODO: replace with actual serial number
+    camera_name: "zed_cam2"
+    x_offset: -0.10
+    y_offset: -0.25             # Right side
+    z_offset:  0.55
+    roll:  0.0
+    pitch: 0.0
+    yaw:  -1.5708               # Facing right (-90°)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# ZED wrapper parameters shared across all cameras.
+# These are passed to each zed_wrapper node at launch.
+# ──────────────────────────────────────────────────────────────────────────────
+zed_common:
+  general:
+    camera_model: "zedm"          # ZED Mini
+    grab_resolution: "HD720"      # 1280×720 — balance quality vs. bandwidth
+    grab_frame_rate: 15           # Hz — lower for Jetson if CPU-bound
+    sdk_verbose: 0
+    svo_real_time_mode: false     # Set true to replay SVO at recording speed
+
+  depth:
+    depth_mode: "ULTRA"           # ULTRA for dev; switch to PERFORMANCE on Jetson
+    depth_confidence: 50
+    depth_texture_conf: 100
+    min_depth: 0.3                # metres
+    max_depth: 10.0               # metres
+
+  pos_tracking:
+    pos_tracking_enabled: true
+    imu_fusion: true              # Use ZED Mini built-in IMU — always keep true
+    publish_tf: true
+    publish_map_tf: false         # RTAB-Map owns map→odom; do NOT let ZED publish it
+    map_frame: "map"
+    odometry_frame: "odom"
+    base_frame: "base_link"       # All cameras share base_link
+
+  point_cloud:
+    point_cloud_freq: 10.0        # Hz
+
+  sensors:
+    sensors_image_sync: false
+    sensors_pub_rate: 200.0       # IMU publish rate (Hz)

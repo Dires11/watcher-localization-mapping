@@ -1,0 +1,31 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# zed_override.yaml
+#
+# Passed to each zed_camera.launch.py via ros_params_override_path.
+# These values override the defaults in zedm.yaml from the ZED wrapper.
+# ──────────────────────────────────────────────────────────────────────────────
+/**:
+    ros__parameters:
+        general:
+            grab_resolution: 'HD720'    # 1280×720 — balance quality vs. bandwidth
+            grab_frame_rate: 15         # Hz — lower for Jetson if CPU-bound
+
+        depth:
+            depth_mode: 'NEURAL'        # ULTRA is deprecated in SDK 5.x; NEURAL is the replacement
+            depth_confidence: 50
+            depth_texture_conf: 100
+            min_depth: 0.3
+            max_depth: 10.0
+
+        pos_tracking:
+            pos_tracking_enabled: true
+            pos_tracking_mode: 'GEN_1'  # GEN_1/GEN_2 work with old SVO files (no high-freq IMU needed)
+            imu_fusion: false           # Old SVO format lacks high-frequency IMU data required by GEN_3
+            publish_map_tf: false       # RTAB-Map owns map→odom, do NOT let ZED publish it
+            base_frame: 'base_link'     # All cameras share base_link as their root frame
+
+        sensors:
+            sensors_pub_rate: 200.0     # IMU publish rate (Hz) — getSensorsData warnings are harmless with old SVO files
+
+        point_cloud:
+            point_cloud_freq: 10.0

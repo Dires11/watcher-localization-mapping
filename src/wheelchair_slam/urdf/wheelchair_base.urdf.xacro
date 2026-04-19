@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="wheelchair">
+
+  <!--
+    Wheelchair robot description.
+
+    This file defines the base_link frame and includes the camera mount
+    macro for each ZED Mini camera.  Camera positions are passed in as
+    xacro arguments so that only camera_params.yaml needs to change when
+    hardware placement is finalised.
+
+    Arguments (set in robot_description.launch.py from camera_params.yaml):
+      cam0_x, cam0_y, cam0_z, cam0_roll, cam0_pitch, cam0_yaw
+      cam1_x, cam1_y, cam1_z, cam1_roll, cam1_pitch, cam1_yaw
+      cam2_x, cam2_y, cam2_z, cam2_roll, cam2_pitch, cam2_yaw
+      num_cameras  (1, 2, or 3)
+  -->
+
+  <xacro:include filename="$(find wheelchair_slam)/urdf/cameras.urdf.xacro"/>
+
+  <!-- ── Arguments from launch file ─────────────────────────────── -->
+  <xacro:arg name="num_cameras" default="3"/>
+
+  <!-- Camera 0 pose (front-facing by default) -->
+  <xacro:arg name="cam0_x"     default="0.30"/>
+  <xacro:arg name="cam0_y"     default="0.00"/>
+  <xacro:arg name="cam0_z"     default="0.60"/>
+  <xacro:arg name="cam0_roll"  default="0.0"/>
+  <xacro:arg name="cam0_pitch" default="0.0"/>
+  <xacro:arg name="cam0_yaw"   default="0.0"/>
+
+  <!-- Camera 1 pose (left-facing by default) -->
+  <xacro:arg name="cam1_x"     default="-0.10"/>
+  <xacro:arg name="cam1_y"     default="0.25"/>
+  <xacro:arg name="cam1_z"     default="0.55"/>
+  <xacro:arg name="cam1_roll"  default="0.0"/>
+  <xacro:arg name="cam1_pitch" default="0.0"/>
+  <xacro:arg name="cam1_yaw"   default="1.5708"/>
+
+  <!-- Camera 2 pose (right-facing by default) -->
+  <xacro:arg name="cam2_x"     default="-0.10"/>
+  <xacro:arg name="cam2_y"     default="-0.25"/>
+  <xacro:arg name="cam2_z"     default="0.55"/>
+  <xacro:arg name="cam2_roll"  default="0.0"/>
+  <xacro:arg name="cam2_pitch" default="0.0"/>
+  <xacro:arg name="cam2_yaw"   default="-1.5708"/>
+
+  <!-- ── Base link ──────────────────────────────────────────────── -->
+  <!--
+    base_link is placed at the centre of the wheelchair footprint,
+    at floor level.  All camera positions are expressed relative to this.
+    Approximate wheelchair dimensions: 0.65m wide × 1.10m long × 0.90m tall.
+  -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0.45" rpy="0 0 0"/>
+      <geometry>
+        <box size="1.10 0.65 0.90"/>
+      </geometry>
+      <material name="wheelchair_grey">
+        <color rgba="0.6 0.6 0.6 0.5"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.45" rpy="0 0 0"/>
+      <geometry>
+        <box size="1.10 0.65 0.90"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="80.0"/>
+      <inertia ixx="5.0" ixy="0" ixz="0"
+                         iyy="8.0" iyz="0"
+                                   izz="3.0"/>
+    </inertial>
+  </link>
+
+  <!-- ── Camera mounts ──────────────────────────────────────────── -->
+  <!-- Camera 0 is always mounted -->
+  <xacro:zed_mini_mount
+    name="zed_cam0"
+    x="$(arg cam0_x)" y="$(arg cam0_y)" z="$(arg cam0_z)"
+    roll="$(arg cam0_roll)" pitch="$(arg cam0_pitch)" yaw="$(arg cam0_yaw)"/>
+
+  <!-- Camera 1 — only included when num_cameras >= 2 -->
+  <xacro:if value="${int('$(arg num_cameras)') >= 2}">
+    <xacro:zed_mini_mount
+      name="zed_cam1"
+      x="$(arg cam1_x)" y="$(arg cam1_y)" z="$(arg cam1_z)"
+      roll="$(arg cam1_roll)" pitch="$(arg cam1_pitch)" yaw="$(arg cam1_yaw)"/>
+  </xacro:if>
+
+  <!-- Camera 2 — only included when num_cameras >= 3 -->
+  <xacro:if value="${int('$(arg num_cameras)') >= 3}">
+    <xacro:zed_mini_mount
+      name="zed_cam2"
+      x="$(arg cam2_x)" y="$(arg cam2_y)" z="$(arg cam2_z)"
+      roll="$(arg cam2_roll)" pitch="$(arg cam2_pitch)" yaw="$(arg cam2_yaw)"/>
+  </xacro:if>
+
+</robot>

@@ -1,0 +1,11 @@
+# SVO recordings (can be large binary files)
+recordings/*.svo
+recordings/*.svo2
+
+# RTAB-Map databases
+maps/*.db
+
+# ROS 2 build artifacts
+build/
+install/
+log/

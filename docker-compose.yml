@@ -1,0 +1,36 @@
+services:
+  wheelchair_vision:
+    image: zed-jazzy-latest 
+    container_name: wheelchair_vision_container
+    build:
+      context: .
+      dockerfile: dockerfile
+    
+    # 1. Hardware Access
+    privileged: true
+    network_mode: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, video]
+
+    # 2. X11 Display (For RViz2)
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - NVIDIA_VISIBLE_DEVICES=all
+      - ROS_DOMAIN_ID=0
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ~/.Xauthority:/root/.Xauthority:rw
+      - ./recordings:/root/ros2_ws/recordings
+      - ./src:/root/ros2_ws/src/wheelchair_slam
+      - ./maps:/root/ros2_ws/maps
+
+
+    stdin_open: true
+    tty: true

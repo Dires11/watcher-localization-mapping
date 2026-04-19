@@ -1,0 +1,94 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# ekf_params.yaml  —  robot_localization Extended Kalman Filter
+#
+# Fuses visual-inertial odometry from up to 3 ZED Mini cameras into a single
+# /odom topic and odom→base_link TF for Nav2 and RTAB-Map.
+#
+# Strategy:
+#   cam0  — PRIMARY:   use absolute pose + twist (camera with best forward view)
+#   cam1  — SECONDARY: use differential pose only (avoids conflicting origins)
+#   cam2  — SECONDARY: use differential pose only
+#
+# Two-D mode is enabled: the wheelchair operates on a ground plane, so z, roll,
+# and pitch are ignored.  This improves numerical stability and prevents drift
+# in unconstrained axes.
+# ──────────────────────────────────────────────────────────────────────────────
+
+ekf_filter_node:
+  ros__parameters:
+
+    frequency: 30.0            # Hz — EKF output rate
+    sensor_timeout: 0.1        # seconds — drop stale inputs after this
+    two_d_mode: true           # Constrain to ground plane (x, y, yaw only)
+    print_diagnostics: true
+
+    # Frame IDs
+    map_frame:       map
+    odom_frame:      odom
+    base_link_frame: base_link
+    world_frame:     odom      # EKF publishes odom→base_link (not map→base_link)
+
+    # ── Camera 0 — primary odometry source ──────────────────────────────────
+    # Absolute pose + twist.  cam0 is the front-facing camera with the most
+    # reliable forward-motion observability.
+    # Topic path: /<namespace>/<node_name>/odom  (node_name defaults to zed_node)
+    odom0: /cam0/cam0/odom
+    # State vector entries to use: [x, y, z, roll, pitch, yaw,
+    #                               vx, vy, vz, vroll, vpitch, vyaw,
+    #                               ax, ay, az]
+    odom0_config: [true,  true,  false,    # x, y, z
+                   false, false, true,     # roll, pitch, yaw
+                   true,  true,  false,    # vx, vy, vz
+                   false, false, true,     # vroll, vpitch, vyaw
+                   false, false, false]    # ax, ay, az
+    odom0_differential: false    # Use absolute pose from ZED positional tracking
+    odom0_relative: false
+    odom0_queue_size: 5
+    odom0_rejection_threshold: 4.0
+
+    # ── Camera 1 — secondary odometry source ────────────────────────────────
+    # Differential mode: only pose *changes* are fed in, not the absolute pose.
+    # This prevents the EKF from trying to reconcile two cameras that each
+    # believe they are the world origin.
+    odom1: /cam1/cam1/odom
+    odom1_config: [true,  true,  false,
+                   false, false, true,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false]
+    odom1_differential: true     # Delta pose only — critical for multi-camera fusion
+    odom1_relative: false
+    odom1_queue_size: 5
+    odom1_rejection_threshold: 4.0
+
+    # ── Camera 2 — secondary odometry source ────────────────────────────────
+    odom2: /cam2/cam2/odom
+    odom2_config: [true,  true,  false,
+                   false, false, true,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false]
+    odom2_differential: true
+    odom2_relative: false
+    odom2_queue_size: 5
+    odom2_rejection_threshold: 4.0
+
+    # ── Process noise covariance ─────────────────────────────────────────────
+    # 15×15 matrix (row-major).  Tuned conservatively for a slow wheelchair.
+    process_noise_covariance: [
+      0.05,  0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.05,  0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.06,  0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.03,  0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.03,  0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.06,  0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.025,  0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.025,  0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.04,  0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.01,  0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.01,  0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.02,  0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.01,  0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.01,  0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.015
+    ]
