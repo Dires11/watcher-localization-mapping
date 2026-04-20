@@ -3,13 +3,13 @@
 # run.sh  —  One-command launcher for the wheelchair SLAM pipeline.
 #
 # Usage:
-#   ./run.sh                          # 3 live cameras, full SLAM
-#   ./run.sh --svo                    # replay the test SVO recording (1 camera)
-#   ./run.sh --svo --loop             # loop the SVO recording
-#   ./run.sh --cameras 1              # use only 1 camera (live)
-#   ./run.sh --localize               # localization-only (no new mapping)
-#   ./run.sh --rebuild                # force Docker image rebuild first
-#   ./run.sh --shell                  # open a bash shell instead of launching SLAM
+#   ./run.sh                                        # 3 live cameras, full SLAM
+#   ./run.sh --svo --svo-file recordings/my.svo     # replay an SVO recording
+#   ./run.sh --svo --svo-file recordings/my.svo --loop  # loop the recording
+#   ./run.sh --cameras 1                            # use only 1 camera (live)
+#   ./run.sh --localize                             # localization-only (no new mapping)
+#   ./run.sh --rebuild                              # force Docker image rebuild first
+#   ./run.sh --shell                                # open a bash shell instead of launching SLAM
 # ──────────────────────────────────────────────────────────────────────────────
 set -e
 
@@ -17,7 +17,7 @@ set -e
 NUM_CAMERAS=3
 USE_SVO=false
 _SVO_CAMERAS_OVERRIDE=false   # tracks whether --cameras was set explicitly
-SVO_FILE=/root/ros2_ws/recordings/CSUN-outside-iii.svo
+SVO_FILE=""
 SVO_LOOP=false
 LOCALIZE=false
 REBUILD=false
@@ -37,6 +37,13 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
+
+# Validate SVO mode
+if [[ "$USE_SVO" == true && -z "$SVO_FILE" ]]; then
+  echo "Error: --svo requires --svo-file <path>"
+  echo "  Example: ./run.sh --svo --svo-file recordings/my-run.svo"
+  exit 1
+fi
 
 # SVO mode with a single file → default to 1 camera unless overridden
 if [[ "$USE_SVO" == true && "$_SVO_CAMERAS_OVERRIDE" == false ]]; then

@@ -36,9 +36,8 @@ The script will automatically build the Docker image on the first run (this take
 | Option | Description |
 |---|---|
 | *(none)* | Live mode — 3 cameras, full SLAM |
-| `--svo` | Replay mode — use the SVO recording in `recordings/` |
-| `--svo --loop` | Replay mode, looping the recording |
-| `--svo-file <path>` | Specify a custom SVO file (path relative to project root) |
+| `--svo --svo-file <path>` | Replay mode — replay the given SVO file (required with `--svo`) |
+| `--svo --svo-file <path> --loop` | Replay mode, looping the recording |
 | `--cameras <n>` | Use `n` cameras in live mode (default: 3) |
 | `--localize` | Localization only — load an existing map, do not build a new one |
 | `--rebuild` | Force a full Docker image rebuild before launching |
@@ -51,10 +50,10 @@ The script will automatically build the Docker image on the first run (this take
 ./run.sh
 
 # Replay a saved SVO recording
-./run.sh --svo
+./run.sh --svo --svo-file recordings/my-run.svo
 
-# Replay a specific SVO file on loop
-./run.sh --svo --loop --svo-file recordings/my-run.svo
+# Replay on loop
+./run.sh --svo --svo-file recordings/my-run.svo --loop
 
 # Localization only (requires a map already saved in maps/)
 ./run.sh --localize
