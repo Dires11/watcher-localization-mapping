@@ -1,6 +1,7 @@
 # Recordings
 
 Place ZED SVO recording files here. SVO files are not tracked by git (they can be several gigabytes each).
+You can find recordings from this drive: https://drive.google.com/drive/u/3/folders/13NbSXXYstn-2NNlI8K3TLkBbLt9HyD1F
 
 ## File format
 
