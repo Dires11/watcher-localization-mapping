@@ -154,7 +154,7 @@ fi
 # ── Build the ROS2 command to run inside the container ───────────────────────
 LAUNCH_ARGS="num_cameras:=$NUM_CAMERAS"
 LAUNCH_ARGS="$LAUNCH_ARGS use_svo:=$USE_SVO"
-LAUNCH_ARGS="$LAUNCH_ARGS svo_file:=$SVO_FILE"
+[[ -n "$SVO_FILE" ]] && LAUNCH_ARGS="$LAUNCH_ARGS svo_file:=$SVO_FILE"
 LAUNCH_ARGS="$LAUNCH_ARGS svo_loop:=$SVO_LOOP"
 LAUNCH_ARGS="$LAUNCH_ARGS localization_only:=$LOCALIZE"
 LAUNCH_ARGS="$LAUNCH_ARGS rtabmap_db:=$MAP_DB_CONTAINER"
