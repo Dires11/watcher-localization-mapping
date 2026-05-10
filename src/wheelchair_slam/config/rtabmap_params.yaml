@@ -28,7 +28,7 @@ rtabmap:
     # ── Input subscriptions ───────────────────────────────────────────────────
     subscribe_depth: true
     subscribe_rgb:   true
-    subscribe_scan:  true      # enable scan for ICP pose correction
+    subscribe_scan:  false
     subscribe_odom_info: false
 
     # ── TF timing ─────────────────────────────────────────────────────────────

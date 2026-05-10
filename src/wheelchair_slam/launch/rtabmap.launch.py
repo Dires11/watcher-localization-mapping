@@ -1,14 +1,11 @@
 """
 rtabmap.launch.py
 
-Launches the ICP odometry node and RTAB-Map SLAM node.
-
-ICP odometry consumes:
-  - cam0 3D point cloud → estimates heading-accurate /icp_odom
+Launches the RTAB-Map SLAM node.
 
 RTAB-Map consumes:
   - cam0 RGB-D (primary camera, front-facing)
-  - /icp_odom from icp_odometry (replaces ZED VIO to fix heading drift)
+  - /cam0/cam0/odom from ZED visual odometry
   - /scan from pointcloud_to_laserscan (proximity loop closure)
 
 And produces:
@@ -38,48 +35,6 @@ def launch_rtabmap(context, *args, **kwargs):
     pkg = get_package_share_directory('wheelchair_slam')
     rtabmap_params = os.path.join(pkg, 'config', 'rtabmap_params.yaml')
 
-    # ICP odometry node: estimates frame-to-frame pose from the ZED 3D point
-    # cloud using Iterative Closest Point.  This replaces ZED's visual-inertial
-    # odometry (which lacks IMU data in SVO files and drifts in heading) with
-    # scan-based odometry that is far more accurate for heading estimation.
-    # publish_tf=false avoids conflicting with the ZED/EKF TF publishers.
-    icp_odom_node = Node(
-        package='rtabmap_odom',
-        executable='icp_odometry',
-        name='icp_odometry',
-        output='screen',
-        parameters=[{
-            'frame_id':                      'cam0_camera_link',
-            'odom_frame_id':                 'odom',
-            'publish_tf':                    False,
-            'wait_for_transform':            1.0,
-            # PointToPlane is disabled: in flat outdoor scenes (pavement + open sky)
-            # the structural complexity check fires and constrains translation to the
-            # floor-normal direction only, wiping out horizontal (X/Y) motion entirely.
-            # PointToPoint ICP does unconstrained matching and works correctly outdoors.
-            'Icp/PointToPlane':              'false',
-            'Icp/Iterations':                '30',
-            'Icp/VoxelSize':                 '0.1',   # 10 cm voxels — speed vs. accuracy
-            'Icp/MaxCorrespondenceDistance': '1.0',   # metres
-            'Icp/MaxTranslation':            '2.0',   # allow large inter-frame motion
-            'Icp/MaxRotation':               '1.57',  # allow up to 90°
-            # Frame-to-Frame: each cloud matches only the previous frame.
-            # Avoids the large pose jumps (high variance) that Frame-to-Map
-            # produces when its growing local map drifts and misaligns.
-            'Odom/Strategy':                 '0',
-            # BEST_EFFORT QoS — ZED publishes with SensorDataQoS
-            'qos_scan_cloud':                2,
-        }],
-        remappings=[
-            ('scan_cloud', '/cam0/cam0/point_cloud/cloud_registered'),
-            # Remap scan to a dead topic — icp_odometry auto-subscribes to both
-            # scan and scan_cloud; with scan_cloud active, scan must be suppressed
-            # to avoid the "both subscribers cannot be used" error.
-            ('scan',       '/disabled/icp_scan'),
-            ('odom',       '/icp_odom'),
-        ],
-    )
-
     # Override SLAM vs. localisation mode and DB path from launch args.
     # rtabmap_ros ROS2 uses "database_path" (not "Mem/DBPath") as the ROS
     # parameter name for the database file location.
@@ -104,9 +59,7 @@ def launch_rtabmap(context, *args, **kwargs):
             ('rgb/image',       '/cam0/cam0/rgb/color/rect/image'),
             ('rgb/camera_info', '/cam0/cam0/rgb/color/rect/image/camera_info'),
             ('depth/image',     '/cam0/cam0/depth/depth_registered'),
-            # ICP odometry replaces ZED's VIO — eliminates heading drift from
-            # missing IMU data in SVO recordings
-            ('odom',            '/icp_odom'),
+            ('odom',            '/cam0/cam0/odom'),
             # Laser scan for proximity loop closure detection
             ('scan',            '/scan'),
             # Map output
@@ -114,7 +67,7 @@ def launch_rtabmap(context, *args, **kwargs):
         ],
     )
 
-    return [icp_odom_node, rtabmap_node]
+    return [rtabmap_node]
 
 
 def generate_launch_description():
