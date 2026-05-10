@@ -28,30 +28,41 @@ rtabmap:
     # ── Input subscriptions ───────────────────────────────────────────────────
     subscribe_depth: true
     subscribe_rgb:   true
-    subscribe_scan:  false     # disable scan sync for now — simplifies startup
+    subscribe_scan:  true      # enable scan for ICP pose correction
     subscribe_odom_info: false
+
+    # ── TF timing ─────────────────────────────────────────────────────────────
+    # In SVO non-realtime mode, the ZED node sometimes publishes images before
+    # the corresponding TF entry has been written.  wait_for_transform controls
+    # how long RTAB-Map blocks waiting for the TF at the image timestamp before
+    # giving up and dropping the frame.  tf_tolerance accepts a slightly stale
+    # TF (old direction) but wait_for_transform covers the "future" direction.
+    tf_tolerance:        0.5   # seconds — accept TF up to 0.5 s stale
+    wait_for_transform:  1.0   # seconds — block up to 1 s for future TF entries
 
     # ── QoS — must match ZED wrapper (BEST_EFFORT = 2) ───────────────────────
     qos_image:       2
     qos_camera_info: 2
     qos_odom:        2
+    qos_scan:        2         # BEST_EFFORT — pointcloud_to_laserscan uses SensorDataQoS
 
     # Topic remappings are declared in rtabmap.launch.py.
     # Listed here for reference:
-    #   rgb/image         → /cam0/rgb/image_rect_color
-    #   rgb/camera_info   → /cam0/rgb/camera_info
-    #   depth/image       → /cam0/depth/depth_registered
-    #   odom              → /odom
-    #   scan              → /scan
+    #   rgb/image         → /cam0/cam0/rgb/color/rect/image
+    #   rgb/camera_info   → /cam0/cam0/rgb/color/rect/image/camera_info
+    #   depth/image       → /cam0/cam0/depth/depth_registered
+    #   odom              → /cam0/cam0/odom
+    #   scan              → /scan  (from pointcloud_to_laserscan)
 
     # ── SLAM / Localisation mode ──────────────────────────────────────────────
     Mem/IncrementalMemory: "true"      # true = full SLAM; false = localisation only
     Mem/InitWMWithAllNodes: "false"
 
     # ── Database ──────────────────────────────────────────────────────────────
-    # The database persists the map so the wheelchair remembers areas across
-    # sessions.  Delete rtabmap.db to start a fresh map.
-    Mem/DBPath: "/root/ros2_ws/maps/rtabmap.db"
+    # database_path is intentionally NOT set here — it is controlled exclusively
+    # by the rtabmap_db launch argument (default: /root/ros2_ws/maps/rtabmap.db,
+    # overridden by --map <name> in run.sh).  Setting it here caused the YAML
+    # value to win over the launch-time override, ignoring --map.
 
     # ── 2-D occupancy grid output ─────────────────────────────────────────────
     Grid/CellSize: "0.05"              # 5 cm resolution — suitable for wheelchair nav
@@ -61,21 +72,29 @@ rtabmap:
     Grid/MaxGroundAngle: "45"         # degrees — surfaces steeper than this = obstacle
     Grid/NormalsSegmentation: "true"  # Classify floor vs. obstacle by surface normal
     Grid/RayTracing: "true"           # Mark free space along rays for cleaner maps
+    # ZED depth output at 1104×621; 621 is not divisible by 4 (the default).
+    # Set to 3 (both dimensions divisible) to suppress the per-frame warning.
+    Grid/DepthDecimation: "3"
 
     map_always_update: false
     map_empty_ray_tracing: true
 
     # ── Occupancy grid ────────────────────────────────────────────────────────
-    # Build grid from depth projection (not scan — scan is disabled).
+    # Build grid cells from depth projection; scan is used only for ICP pose correction.
     Grid/Sensor: "1"
 
     # ── Loop closure / visual feature detection ───────────────────────────────
     # ORB (strategy 2) — BRIEF is unavailable without OpenCV xfeatures2d.
-    Kp/MaxFeatures: "500"
+    Kp/MaxFeatures: "800"
     Kp/DetectorStrategy: "2"          # 0=SURF, 1=SIFT, 2=ORB, 6=GFTT/BRIEF
     Vis/FeatureType: "2"              # Must match Kp/DetectorStrategy — both ORB to avoid Mem/UseOdomFeatures warning
-    Vis/MinInliers: "15"              # Minimum inliers for a valid loop closure
+    Vis/MinInliers: "8"               # Minimum inliers for a valid loop closure (lowered for outdoor)
     Vis/InlierDistance: "0.1"         # metres
+
+    # ── Depth compression ────────────────────────────────────────────────────
+    # 32-bit float depth is incompatible with the default .rvl compression.
+    # Declaring .png explicitly suppresses the one-time startup warning.
+    Mem/DepthCompressionFormat: ".png"
 
     # ── Memory management ─────────────────────────────────────────────────────
     Mem/STMSize: "30"                 # Short-term memory nodes (reduce to 15 if RAM-limited on Jetson)

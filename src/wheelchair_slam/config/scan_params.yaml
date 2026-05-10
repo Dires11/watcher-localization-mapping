@@ -12,7 +12,9 @@
 pointcloud_to_laserscan_node:
   ros__parameters:
     target_frame: base_link     # Output scan in base_link frame
-    transform_tolerance: 0.05   # seconds — increase to 0.1 if ExtrapolationException
+    # Raised from 0.05 to 0.2 s — SVO NEURAL depth processing introduces enough
+    # latency that 50 ms was too tight, causing the message filter queue to fill.
+    transform_tolerance: 0.2
 
     # Height band for obstacle detection (metres, relative to base_link)
     # base_link is at floor level; a seated occupant starts at ~0.45 m.

@@ -9,6 +9,11 @@
         general:
             grab_resolution: 'HD720'    # 1280×720 — balance quality vs. bandwidth
             grab_frame_rate: 15         # Hz — lower for Jetson if CPU-bound
+            # Cap SVO playback to ~realtime so sim_time does not race ahead of
+            # NEURAL depth processing.  Without this, RTAB-Map receives images
+            # stamped at time T but TF hasn't been published for T yet, causing
+            # "extrapolation into the future" warnings every frame.
+            grab_compute_capping_fps: 15.0
 
         depth:
             depth_mode: 'NEURAL'        # ULTRA is deprecated in SDK 5.x; NEURAL is the replacement
@@ -23,9 +28,15 @@
             imu_fusion: false           # Old SVO format lacks high-frequency IMU data required by GEN_3
             publish_map_tf: false       # RTAB-Map owns map→odom, do NOT let ZED publish it
             base_frame: 'base_link'     # All cameras share base_link as their root frame
+            area_memory: false              # Disable ZED's internal loop closure — RTAB-Map handles this
+            reset_odom_with_loop_closure: false  # Prevent ZED from snapping odom back to origin on loop
 
         sensors:
-            sensors_pub_rate: 200.0     # IMU publish rate (Hz) — getSensorsData warnings are harmless with old SVO files
+            # SVO files do not carry live sensor data so getSensorsData() always
+            # fails.  Nothing in the pipeline (EKF uses visual odometry only,
+            # RTAB-Map doesn't use IMU) consumes these topics, so keep the rate
+            # low to avoid spamming the console.
+            sensors_pub_rate: 1.0
 
         point_cloud:
             point_cloud_freq: 10.0

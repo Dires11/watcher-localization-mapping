@@ -5,7 +5,11 @@ recordings/*.svo2
 # RTAB-Map databases
 maps/*.db
 
+# ZED SDK TensorRT model cache (large GPU-compiled binaries, machine-specific)
+zed_resources/
+
 # ROS 2 build artifacts
 build/
 install/
 log/
+.claude/

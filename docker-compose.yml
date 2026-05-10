@@ -30,7 +30,13 @@ services:
       - ./recordings:/root/ros2_ws/recordings
       - ./src:/root/ros2_ws/src/wheelchair_slam
       - ./maps:/root/ros2_ws/maps
+      # Persist the ZED SDK's TensorRT-compiled AI models (neural_depth_5, etc.)
+      # so they are only optimized once instead of on every container start.
+      - ./zed_resources:/usr/local/zed/resources
 
+
+    # Give RTAB-Map time to flush rtabmap.db before Docker force-kills it
+    stop_grace_period: 30s
 
     stdin_open: true
     tty: true

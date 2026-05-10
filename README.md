@@ -40,6 +40,9 @@ The script will automatically build the Docker image on the first run (this take
 | `--svo --svo-file <path> --loop` | Replay mode, looping the recording |
 | `--cameras <n>` | Use `n` cameras in live mode (default: 3) |
 | `--localize` | Localization only — load an existing map, do not build a new one |
+| `--map <name>` | Use `maps/<name>.db` instead of the default `maps/rtabmap.db` |
+| `--fresh-map` | Back up the existing map database and start a new one from scratch |
+| `--export-map` | Export the active map database to a Nav2 occupancy grid (`maps/*.pgm` + `maps/*.yaml`) |
 | `--rebuild` | Force a full Docker image rebuild before launching |
 | `--shell` | Open an interactive shell inside the container instead of launching SLAM |
 
@@ -57,6 +60,15 @@ The script will automatically build the Docker image on the first run (this take
 
 # Localization only (requires a map already saved in maps/)
 ./run.sh --localize
+
+# Use a named map database
+./run.sh --map jacaranda
+
+# Start fresh (backs up the existing map first)
+./run.sh --fresh-map
+
+# Export the current map to a Nav2 occupancy grid
+./run.sh --export-map
 
 # Debug: open a shell inside the container
 ./run.sh --shell
@@ -101,6 +113,7 @@ The container mounts three host directories so that data persists across runs:
 | `./recordings/` | `/root/ros2_ws/recordings/` | SVO files for replay |
 | `./maps/` | `/root/ros2_ws/maps/` | RTAB-Map database output |
 | `./src/` | `/root/ros2_ws/src/wheelchair_slam/` | Package source (live-reloaded) |
+| `./zed_resources/` | `/usr/local/zed/resources/` | ZED TensorRT model cache (compiled once, reused across runs) |
 
 ---
 
