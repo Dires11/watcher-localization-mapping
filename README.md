@@ -52,8 +52,11 @@ The script will automatically build the Docker image on the first run (this take
 # Live SLAM with all 3 cameras
 ./run.sh
 
-# Replay a saved SVO recording
+# Replay a saved SVO recording (map saved to maps/rtabmap.db by default)
 ./run.sh --svo --svo-file recordings/my-run.svo
+
+# Replay and save to a named map database (recommended to avoid overwriting)
+./run.sh --svo --svo-file recordings/my-run.svo --map my-run
 
 # Replay on loop
 ./run.sh --svo --svo-file recordings/my-run.svo --loop
