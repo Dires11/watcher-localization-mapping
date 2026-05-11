@@ -8,12 +8,13 @@
     ros__parameters:
         general:
             grab_resolution: 'HD720'    # 1280×720 — balance quality vs. bandwidth
-            grab_frame_rate: 15         # Hz — lower for Jetson if CPU-bound
-            # Cap SVO playback to ~realtime so sim_time does not race ahead of
-            # NEURAL depth processing.  Without this, RTAB-Map receives images
-            # stamped at time T but TF hasn't been published for T yet, causing
-            # "extrapolation into the future" warnings every frame.
-            grab_compute_capping_fps: 15.0
+            grab_frame_rate: 15         # Hz — recorded at 15fps; do not change this
+            # Limit how fast the SVO is processed. NEURAL depth is slow; at 15fps
+            # the processing queue backs up and TF falls behind, causing persistent
+            # "extrapolation into the future" warnings and a growing delay.
+            # 5fps gives NEURAL depth and RTAB-Map time to finish each frame before
+            # the next one arrives, keeping delay <0.5s.
+            grab_compute_capping_fps: 5.0
 
         depth:
             depth_mode: 'NEURAL'        # ULTRA is deprecated in SDK 5.x; NEURAL is the replacement
